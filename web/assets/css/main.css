@@ -54,16 +54,22 @@ a:hover {
         var(--bg);
 }
 
-.particles-layer canvas {
+.particles-layer canvas,
+.particles-canvas {
     display: block;
+    width: 100%;
+    height: 100%;
 }
 
-/* 内容层需要盖在粒子上面 */
-.app-header,
+/* 减少动效 / 不支持 Canvas 时的静态兜底：只保留渐变光晕 */
+.particles-layer.is-static {
+    background-image: radial-gradient(1200px 600px at 20% -10%, #12243d 0%, transparent 60%),
+        radial-gradient(900px 500px at 90% 0%, #1b1730 0%, transparent 55%);
+}
+
+/* 内容层需要盖在粒子上面（层级链：背景 0 → main/footer 10 → header 30 → 下拉面板 40 → 遮罩 50 → 抽屉 60 → Toast 80） */
 .app-main,
-.app-footer,
-.drawer,
-.drawer-mask {
+.app-footer {
     position: relative;
     z-index: 10;
 }
@@ -72,6 +78,8 @@ a:hover {
 .app-header {
     position: sticky;
     top: 0;
+    /* 必须高于 .app-main(10)：否则粘性头部里的下拉面板会被主体内容盖住 */
+    z-index: 30;
     backdrop-filter: blur(12px);
     background: rgba(13, 17, 23, 0.78);
     border-bottom: 1px solid var(--border);
@@ -226,7 +234,9 @@ a:hover {
     border: 1px solid var(--border);
     background: rgba(22, 27, 34, 0.98);
     box-shadow: 0 18px 40px rgba(0, 0, 0, .55);
+    /* 位于 .app-header(z-index:30) 的层叠上下文内，40 已足以压过主体内容 */
     z-index: 40;
+    overscroll-behavior: contain;
 }
 
 .dropdown-head {
@@ -601,6 +611,41 @@ a:hover {
     100% {
         background-position: -20% 0;
     }
+}
+
+/* Github 全网结果分区 */
+.remote-section {
+    margin-top: 34px;
+    padding-top: 8px;
+}
+
+.remote-badge {
+    display: inline-flex;
+    align-items: center;
+    height: 22px;
+    padding: 0 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    color: var(--blue);
+    border: 1px solid rgba(88, 166, 255, 0.45);
+    background: rgba(88, 166, 255, 0.12);
+}
+
+.remote-hint {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.repo-card.is-remote {
+    border-color: rgba(88, 166, 255, 0.28);
+}
+
+.repo-card.is-remote:hover {
+    border-color: rgba(88, 166, 255, 0.55);
+}
+
+.repo-card.is-remote .trend-btn {
+    display: inline-block;
 }
 
 /* 空态 */

@@ -60,6 +60,10 @@
 | `FETCH_CRON_HOUR` | 每日抓取 UTC 小时 | `0`（北京时间 08:00） |
 | `DELTA_CRON_HOUR` | 每日增量计算 UTC 小时 | `1`（北京时间 09:00） |
 | `ADMIN_TOKEN` | 管理接口鉴权 | `change-me-please` |
+| `ADMIN_ALLOW_LOCAL` | 允许 127.0.0.1/::1 免 Token 调用管理接口（页面「刷新数据」一键刷新依赖此项） | `true` |
+| `ADMIN_ALLOW_PRIVATE` | 进一步放行内网地址（Docker 网关 / 局域网） | `false` |
+| `GITHUB_REMOTE_SEARCH_ENABLED` | 搜索框是否检索 Github 全网（只读，不入库） | `true` |
+| `GITHUB_REMOTE_SEARCH_PER_PAGE` | 全网搜索单次返回条数（上限 20） | `10` |
 | `CORS_ORIGINS` | 允许的前端来源 | `*` |
 | `DEMO_SEED_ON_EMPTY` | 数据库为空时自动写入演示数据 | `true` |
 
@@ -204,7 +208,7 @@ docker run -d \
 ## 生产建议
 
 1. **配置 Github Token**：未认证时 Github 每小时仅 60 次请求，认证后 5000 次。未认证状态下应用会自动降低请求频率并可能触发「今日已抓取」跳过。
-2. **修改默认 ADMIN_TOKEN**：否则任何人都能触发手动刷新。
+2. **修改默认 ADMIN_TOKEN**：否则任何人都能触发手动刷新。公网部署时同时设置 `ADMIN_ALLOW_LOCAL=false` 与 `ADMIN_ALLOW_PRIVATE=false`，避免本机/内网放行被公网请求利用（前置 Nginx 反代时来源 IP 会变成代理地址，同样必须关闭）。
 3. **HTTPS**：在容器前加 Nginx / Traefik / Caddy 做 HTTPS 与静态资源压缩。
 4. **备份**：建议每天备份一次 `data/app.db`。
 5. **关闭演示数据**：数据库已有真实数据后，设置 `DEMO_SEED_ON_EMPTY=false`。

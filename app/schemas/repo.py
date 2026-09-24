@@ -149,3 +149,43 @@ class StatsOut(BaseModel):
     github_rate_limit: int = -1
     github_rate_reset_at: str = ""
     has_token: bool = False
+
+
+class RemoteRepoOut(BaseModel):
+    """Github 全网搜索结果（未入库的仓库）。
+
+    与 RepoOut 分离：这类仓库没有快照，因此不含 stars_7d / 趋势 / 收藏字段。
+    """
+
+    repo_id: int
+    full_name: str
+    owner: str
+    name: str
+    description: str | None = None
+    language: str | None = None
+    language_color: str = ""
+    html_url: str
+    avatar_url: str | None = None
+    homepage: str | None = None
+    topics: list[str] = Field(default_factory=list)
+    license: str | None = None
+    total_stars: int = 0
+    total_stars_text: str = ""
+    forks_count: int = 0
+    open_issues_count: int = 0
+    # 数据来源标记，供前端展示「Github 全网」角标
+    source: str = "github"
+
+
+class RemoteSearchOut(BaseModel):
+    """全网搜索响应体。
+
+    :param total: 本次返回条数（不做全量计数，避免额外消耗 Github 配额）
+    :param disabled: 功能被 GITHUB_REMOTE_SEARCH_ENABLED=false 关闭
+    """
+
+    keyword: str = ""
+    total: int = 0
+    items: list[RemoteRepoOut] = Field(default_factory=list)
+    disabled: bool = False
+    message: str = ""

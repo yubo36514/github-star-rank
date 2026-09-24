@@ -6,10 +6,11 @@
 from fastapi import APIRouter
 
 from app.api.response import ok
-from app.api.v1.endpoints import admin, favorites, languages, meta, repos
+from app.api.v1.endpoints import admin, favorites, languages, meta, repos, search
 
 api_router = APIRouter()
 api_router.include_router(repos.router)
+api_router.include_router(search.router)
 api_router.include_router(languages.router)
 api_router.include_router(favorites.router)
 api_router.include_router(meta.router)

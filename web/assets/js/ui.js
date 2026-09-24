@@ -88,6 +88,57 @@ export function createRepoCard(repo, handlers = {}) {
     return card;
 }
 
+/**
+ * 创建 Github 全网搜索结果卡片（未入库项目）。
+ *
+ * 复用 .repo-card 结构与样式，仅额外加「Github 全网」角标；这类项目没有快照，
+ * 因此不展示 7 日增量 / 增长率 / 趋势，也不提供收藏（收藏接口要求项目已入库）。
+ * @param {Object} repo /search/github 返回的 RemoteRepoOut
+ */
+export function createRemoteCard(repo) {
+    const card = document.createElement('article');
+    card.className = 'repo-card is-remote';
+    card.dataset.repoId = String(repo.repo_id);
+
+    const description = repo.description || '暂无简介';
+    const language = repo.language || 'Unknown';
+
+    card.innerHTML = `
+        <div class="card-head">
+            <span class="remote-badge">Github 全网</span>
+            <span class="remote-hint" title="该项目尚未收录，暂无 7 日增量与趋势数据">未收录</span>
+        </div>
+        <a class="repo-title" href="${escapeHtml(repo.html_url)}" target="_blank" rel="noreferrer">
+            <span class="owner">${escapeHtml(repo.owner)}/</span>${escapeHtml(repo.name)}
+        </a>
+        <p class="repo-desc">${escapeHtml(description)}</p>
+        <div class="card-meta">
+            <span class="lang-tag">
+                <i class="lang-dot" style="background:${escapeHtml(repo.language_color || '#8b949e')}"></i>
+                ${escapeHtml(language)}
+            </span>
+            <span title="总 Star 数">★ ${escapeHtml(repo.total_stars_text || formatNumber(repo.total_stars))}</span>
+            <span title="Fork 数">⑂ ${formatNumber(repo.forks_count)}</span>
+        </div>
+        <div class="card-footer">
+            <span>来源：Github Search API</span>
+            <a class="trend-btn" href="${escapeHtml(repo.html_url)}" target="_blank" rel="noreferrer">查看</a>
+        </div>
+    `;
+
+    // 点击卡片主体：跳转 Github 项目地址
+    card.addEventListener('click', () => {
+        window.open(repo.html_url, '_blank', 'noopener');
+    });
+
+    // 内部链接自行跳转即可，避免冒泡后重复打开标签页
+    card.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', (event) => event.stopPropagation());
+    });
+
+    return card;
+}
+
 /** 渲染骨架屏 */
 export function renderSkeletons(container, count = 6) {
     container.innerHTML = '';

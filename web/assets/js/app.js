@@ -10,10 +10,13 @@ import {
     fetchStats,
     refreshData,
     removeFavorite,
+    searchGithub,
 } from './api.js';
+import { REMOTE_SEARCH_MIN_LEN, SEARCH_DEBOUNCE } from './config.js';
 import { bindDrawerEvents, openDrawer } from './drawer.js';
 import { initParticles } from './particles.js';
 import {
+    createRemoteCard,
     createRepoCard,
     escapeHtml,
     formatNumber,
@@ -34,6 +37,7 @@ const state = {
     total: 0,
     totalPages: 1,
     loading: false,
+    remoteKeyword: '', // 最近一次 Github 全网搜索的关键词
 };
 
 const dom = {
@@ -214,6 +218,51 @@ async function loadStats() {
     }
 }
 
+/**
+ * Github 全网搜索：与本地库检索并行，结果在列表下方单独分区展示。
+ * 全网卡片不入库，因此没有 7 日增量与趋势，也不支持收藏。
+ */
+async function loadRemoteSearch(keyword) {
+    const section = document.getElementById('remote-section');
+    const grid = document.getElementById('remote-grid');
+    const title = document.getElementById('remote-title');
+    if (!section || !grid) return;
+
+    // 关键词过短时不做远程请求，直接隐藏分区
+    if (!keyword || keyword.length < REMOTE_SEARCH_MIN_LEN) {
+        section.hidden = true;
+        grid.innerHTML = '';
+        state.remoteKeyword = '';
+        return;
+    }
+
+    state.remoteKeyword = keyword;
+    section.hidden = false;
+    if (title) title.textContent = `Github 全网结果 · “${keyword}”`;
+    grid.innerHTML = '';
+    renderSkeletons(grid, 3);
+
+    try {
+        const data = await searchGithub(keyword);
+        grid.innerHTML = '';
+
+        if (data.disabled) {
+            section.hidden = true;
+            toast(data.message || '全网搜索已关闭，当前仅检索本地库', 'info');
+            return;
+        }
+
+        const items = data.items || [];
+        if (items.length === 0) {
+            grid.innerHTML = '<p class="empty-desc">Github 未检索到相关项目</p>';
+            return;
+        }
+        items.forEach((repo) => grid.appendChild(createRemoteCard(repo)));
+    } catch (error) {
+        grid.innerHTML = `<p class="empty-desc">全网搜索失败：${escapeHtml(error.message)}</p>`;
+    }
+}
+
 /* ------------------------- 收藏 ------------------------- */
 
 /** 切换收藏（乐观更新，失败回滚） */
@@ -263,16 +312,29 @@ function updateLangButton() {
 }
 
 function bindEvents() {
-    // 语言下拉
+    // 语言下拉：层级由 CSS 保证（header 30 > main 10，面板 40 在 header 上下文内）
     const langBtn = document.getElementById('lang-btn');
+    const langPanel = dom.langPanel();
+
+    /** 打开 / 关闭下拉面板，并同步 aria-expanded */
+    const toggleLangPanel = (open) => {
+        langPanel.hidden = !open;
+        langBtn?.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+
     langBtn?.addEventListener('click', (event) => {
         event.stopPropagation();
-        dom.langPanel().hidden = !dom.langPanel().hidden;
+        toggleLangPanel(langPanel.hidden);
     });
-    document.addEventListener('click', () => {
-        dom.langPanel().hidden = true;
+    document.addEventListener('click', () => toggleLangPanel(false));
+    // Esc 关闭下拉
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !langPanel.hidden) {
+            toggleLangPanel(false);
+            langBtn?.focus();
+        }
     });
-    dom.langPanel()?.addEventListener('click', (event) => event.stopPropagation());
+    langPanel?.addEventListener('click', (event) => event.stopPropagation());
     document.getElementById('lang-clear')?.addEventListener('click', () => {
         state.languages = [];
         state.page = 1;
@@ -280,7 +342,7 @@ function bindEvents() {
         loadList();
     });
 
-    // 关键词搜索（300ms 防抖）
+    // 关键词搜索：本地库检索 + Github 全网搜索（防抖，避免打满 Search API 配额）
     let searchTimer = null;
     dom.searchInput()?.addEventListener('input', (event) => {
         clearTimeout(searchTimer);
@@ -289,7 +351,8 @@ function bindEvents() {
             state.keyword = value;
             state.page = 1;
             loadList();
-        }, 300);
+            loadRemoteSearch(value);
+        }, SEARCH_DEBOUNCE);
     });
 
     // 排序切换
@@ -333,7 +396,7 @@ function bindEvents() {
                 loadList({ skeleton: false });
             }, 5000);
         } catch (error) {
-            if (error.message !== '已取消') toast(error.message, 'error');
+            toast(error.message, 'error');
         } finally {
             refreshBtn.disabled = false;
             refreshBtn.textContent = originalText;
@@ -361,6 +424,8 @@ async function bootstrap() {
     applyStateToControls();
     await Promise.all([loadLanguages(), loadStats()]);
     await loadList();
+    // 地址栏带关键词时，页面加载后同步拉取一次全网结果
+    if (state.keyword) loadRemoteSearch(state.keyword);
 }
 
 bootstrap();

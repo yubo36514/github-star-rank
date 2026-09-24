@@ -30,3 +30,4 @@ Thumbs.db
 # 工具缓存 / IDE 本地状态
 .ruff_cache/
 .codebuddy/
+.playwright-cli/

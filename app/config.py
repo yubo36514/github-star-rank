@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     github_backfill_stargazers: bool = True
     github_backfill_limit: int = 30
 
+    # 全网搜索：前端搜索框的远程检索（只读，不写库；关闭后仅检索本地库）
+    github_remote_search_enabled: bool = True
+    # 单次返回条数上限，控制 Search API 配额消耗（认证 30 次/分钟）
+    github_remote_search_per_page: int = 10
+
     # ---------- 定时任务（UTC 小时）----------
     fetch_cron_hour: int = 0
     delta_cron_hour: int = 1
@@ -53,6 +58,13 @@ class Settings(BaseSettings):
 
     # ---------- 安全 / 其它 ----------
     admin_token: str = "change-me-please"
+    # 管理接口是否允许「本机回环地址免 Token」：true 时 127.0.0.1/::1 可直接调用，
+    # 公网部署必须设为 false 并继续使用 X-Admin-Token
+    admin_allow_local: bool = True
+    # 是否进一步放行内网地址（10/8、172.16/12、192.168/16）。
+    # Docker 部署时容器看到的来源通常是网关地址（如 172.17.0.1），需要此项才能在页面上一键刷新；
+    # 仅在服务不对外暴露时开启
+    admin_allow_private: bool = False
     cors_origins: str = "*"
     demo_seed_on_empty: bool = True
 

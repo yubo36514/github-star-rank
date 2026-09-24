@@ -6,9 +6,8 @@
     <title>Github 7 日新增 Star 项目榜单</title>
     <meta name="description" content="定时抓取 Github 官方 API，统计近 7 日 Star 增量并生成榜单" />
 
-    <!-- 本地 vendor：离线也能运行（Tailwind Play CDN + particles.js 粒子库） -->
+    <!-- 本地 vendor：离线也能运行（Tailwind Play CDN；背景改为自绘 Canvas，不再引入 particles.js） -->
     <script src="/assets/vendor/tailwind.min.js"></script>
-    <script src="/assets/vendor/particles.min.js"></script>
     <!-- 自定义样式：即使 Tailwind 未加载，页面布局依然完整 -->
     <link rel="stylesheet" href="/assets/css/main.css" />
 </head>
@@ -42,7 +41,7 @@
 
                 <!-- 语言筛选（多选） -->
                 <div class="dropdown" id="lang-dropdown">
-                    <button class="btn-ghost" id="lang-btn" type="button">
+                    <button class="btn-ghost" id="lang-btn" type="button" aria-expanded="false" aria-haspopup="true">
                         <span id="lang-btn-text">全部语言</span>
                         <span class="caret">▾</span>
                     </button>
@@ -108,6 +107,12 @@
                 <p class="empty-title">暂无数据</p>
                 <p class="empty-desc">数据库为空或当前筛选条件下没有项目，可尝试点击「刷新数据」。</p>
             </div>
+        </section>
+
+        <!-- Github 全网搜索结果（远程检索，未入库；与本地库结果分区展示） -->
+        <section id="remote-section" class="remote-section" hidden>
+            <h2 class="section-title" id="remote-title">Github 全网结果</h2>
+            <div class="card-grid" id="remote-grid"></div>
         </section>
 
         <!-- 分页 -->

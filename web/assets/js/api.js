@@ -5,7 +5,7 @@
  * - 统一解析 { code, message, data } 结构并抛出友好错误
  */
 
-import { ADMIN_TOKEN_KEY, API_BASE, API_PREFIX, CLIENT_ID_KEY, REQUEST_TIMEOUT } from './config.js';
+import { API_BASE, API_PREFIX, CLIENT_ID_KEY, REQUEST_TIMEOUT } from './config.js';
 
 /**
  * 获取（或首次生成）客户端唯一标识。
@@ -105,15 +105,19 @@ export function removeFavorite(repoId) {
 }
 
 /**
- * 手动触发数据抓取（需要 Admin Token）。
- * 首次点击时弹窗让用户输入并缓存到 localStorage。
+ * 手动触发数据抓取（一键刷新，无需输入 Token）。
+ *
+ * Admin Token 由后端从环境变量 ADMIN_TOKEN 读取；本机回环地址由 ADMIN_ALLOW_LOCAL 放行，
+ * 公网部署请在服务端关闭 ADMIN_ALLOW_LOCAL 并通过 X-Admin-Token 调用。
  */
 export function refreshData(force = true) {
-    let token = localStorage.getItem(ADMIN_TOKEN_KEY) || '';
-    if (!token) {
-        token = window.prompt('请输入 Admin Token（服务端环境变量 ADMIN_TOKEN）：') || '';
-        if (!token) return Promise.reject(new Error('已取消'));
-        localStorage.setItem(ADMIN_TOKEN_KEY, token);
-    }
-    return request('/admin/refresh', { method: 'POST', body: { force }, adminToken: token });
+    return request('/admin/refresh', { method: 'POST', body: { force } });
+}
+
+/**
+ * Github 全网搜索（只读代理，不入库）。
+ * 与本地库检索（fetchRepos）并行使用，结果在页面下方单独分区展示。
+ */
+export function searchGithub(keyword, perPage = 10) {
+    return request('/search/github', { params: { keyword, per_page: perPage } });
 }

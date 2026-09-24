@@ -30,6 +30,11 @@ services:
       CLEANUP_CRON_HOUR: "19"
       SNAPSHOT_RETENTION_DAYS: "90"
       ADMIN_TOKEN: ${ADMIN_TOKEN:-change-me-please}
+      ADMIN_ALLOW_LOCAL: "true"
+      # 容器内看到的来源通常是 docker 网关地址（如 172.17.0.1），需开启内网放行才能页面一键刷新
+      ADMIN_ALLOW_PRIVATE: "true"
+      GITHUB_REMOTE_SEARCH_ENABLED: "true"
+      GITHUB_REMOTE_SEARCH_PER_PAGE: "10"
       CORS_ORIGINS: "*"
       DEMO_SEED_ON_EMPTY: "true"
     volumes:

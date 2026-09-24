@@ -3,6 +3,8 @@
 from app.schemas.favorite import FavoriteCreate, FavoriteResult
 from app.schemas.repo import (
     LanguageOut,
+    RemoteRepoOut,
+    RemoteSearchOut,
     RepoDetailOut,
     RepoListOut,
     RepoOut,
@@ -18,6 +20,8 @@ __all__ = [
     "TrendPoint",
     "LanguageOut",
     "StatsOut",
+    "RemoteRepoOut",
+    "RemoteSearchOut",
     "to_repo_out",
     "FavoriteCreate",
     "FavoriteResult",
