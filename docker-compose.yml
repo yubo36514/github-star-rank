@@ -1,0 +1,54 @@
+services:
+  gh-star-ranking:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: github-star-ranking:0.1.0
+    container_name: github-star-ranking
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: production
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      APP_WORKERS: 1
+      TZ: Asia/Shanghai
+      LOG_LEVEL: INFO
+      DATABASE_URL: sqlite+aiosqlite:////app/data/app.db
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      GITHUB_REQUEST_INTERVAL: "0.7"
+      GITHUB_SEARCH_INTERVAL: "2.2"
+      GITHUB_MAX_REPOS: "500"
+      GITHUB_SEARCH_PAGES: "5"
+      GITHUB_RATE_LIMIT_THRESHOLD: "50"
+      GITHUB_CACHE_TTL: "21600"
+      GITHUB_BACKFILL_STARGAZERS: "true"
+      GITHUB_BACKFILL_LIMIT: "30"
+      FETCH_CRON_HOUR: "0"
+      DELTA_CRON_HOUR: "1"
+      CLEANUP_CRON_HOUR: "19"
+      SNAPSHOT_RETENTION_DAYS: "90"
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-change-me-please}
+      CORS_ORIGINS: "*"
+      DEMO_SEED_ON_EMPTY: "true"
+    volumes:
+      - gh-star-data:/app/data          # SQLite 持久化
+      - gh-star-logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  gh-star-data:
+    driver: local
+  gh-star-logs:
+    driver: local

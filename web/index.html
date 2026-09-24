@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Github 7 日新增 Star 项目榜单</title>
+    <meta name="description" content="定时抓取 Github 官方 API，统计近 7 日 Star 增量并生成榜单" />
+
+    <!-- 本地 vendor：离线也能运行（Tailwind Play CDN + particles.js 粒子库） -->
+    <script src="/assets/vendor/tailwind.min.js"></script>
+    <script src="/assets/vendor/particles.min.js"></script>
+    <!-- 自定义样式：即使 Tailwind 未加载，页面布局依然完整 -->
+    <link rel="stylesheet" href="/assets/css/main.css" />
+</head>
+<body class="min-h-screen bg-[#0d1117] text-slate-200 antialiased">
+    <!-- 粒子特效背景层 -->
+    <div id="particles-js" class="particles-layer" aria-hidden="true"></div>
+
+    <!-- 顶部导航 -->
+    <header class="app-header">
+        <div class="header-inner">
+            <div class="flex items-center gap-3">
+                <span class="logo-badge" aria-hidden="true">
+                    <svg viewBox="0 0 16 16" width="20" height="20" fill="currentColor">
+                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.07-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.42 7.42 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.15 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A7.995 7.995 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
+                    </svg>
+                </span>
+                <div>
+                    <h1 class="text-lg font-semibold tracking-wide text-white">Github 7 日新增 Star 榜</h1>
+                    <p class="text-xs text-slate-400" id="header-meta">加载中…</p>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <!-- 关键词搜索 -->
+                <div class="search-box">
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" class="search-icon">
+                        <path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.5 4.5 0 1 0-9 0 4.5 4.5 0 0 0 9 0Z"/>
+                    </svg>
+                    <input id="search-input" type="search" placeholder="搜索项目名 / 简介…" autocomplete="off" />
+                </div>
+
+                <!-- 语言筛选（多选） -->
+                <div class="dropdown" id="lang-dropdown">
+                    <button class="btn-ghost" id="lang-btn" type="button">
+                        <span id="lang-btn-text">全部语言</span>
+                        <span class="caret">▾</span>
+                    </button>
+                    <div class="dropdown-panel" id="lang-panel" hidden>
+                        <div class="dropdown-head">
+                            <span>编程语言</span>
+                            <button type="button" class="link-btn" id="lang-clear">清空</button>
+                        </div>
+                        <div class="dropdown-list" id="lang-list"></div>
+                    </div>
+                </div>
+
+                <!-- 只看收藏 -->
+                <button class="btn-ghost" id="fav-filter-btn" type="button" title="只看我收藏的项目">
+                    <span class="star-icon">★</span> 只看收藏
+                </button>
+
+                <!-- 手动刷新（需要 Admin Token） -->
+                <button class="btn-primary" id="refresh-btn" type="button" title="手动触发一次 Github 数据抓取">
+                    刷新数据
+                </button>
+            </div>
+        </div>
+
+        <!-- 数据状态提示条 -->
+        <div id="notice-bar" class="notice-bar" hidden></div>
+    </header>
+
+    <main class="app-main">
+        <!-- 排序 Tab -->
+        <div class="toolbar">
+            <div class="sort-tabs" id="sort-tabs">
+                <button class="sort-tab is-active" data-sort="stars_7d" type="button">7 日新增</button>
+                <button class="sort-tab" data-sort="total_stars" type="button">总 Star</button>
+                <button class="sort-tab" data-sort="stars_7d_rate" type="button">增长速度</button>
+                <button class="sort-tab" data-sort="created_at" type="button">最新收录</button>
+            </div>
+            <div class="toolbar-right">
+                <span class="text-xs text-slate-400" id="result-count"></span>
+                <label class="page-size">
+                    每页
+                    <select id="page-size">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                    </select>
+                    条
+                </label>
+            </div>
+        </div>
+
+        <!-- Top 3 高亮卡片 -->
+        <section id="top3-section" class="top3-section" hidden>
+            <h2 class="section-title">本周增速 TOP 3</h2>
+            <div class="top3-grid" id="top3-grid"></div>
+        </section>
+
+        <!-- 项目卡片列表 -->
+        <section>
+            <h2 class="section-title" id="list-title">全部项目</h2>
+            <div class="card-grid" id="card-grid"></div>
+            <div class="empty-state" id="empty-state" hidden>
+                <p class="empty-title">暂无数据</p>
+                <p class="empty-desc">数据库为空或当前筛选条件下没有项目，可尝试点击「刷新数据」。</p>
+            </div>
+        </section>
+
+        <!-- 分页 -->
+        <nav class="pagination" id="pagination"></nav>
+    </main>
+
+    <footer class="app-footer">
+        <span>数据来源：Github 官方 API · 每日自动更新</span>
+        <span class="dot">·</span>
+        <a class="link-btn" href="/api/docs" target="_blank" rel="noreferrer">接口文档</a>
+        <span class="dot">·</span>
+        <span id="footer-meta"></span>
+    </footer>
+
+    <!-- 详情抽屉 -->
+    <div class="drawer-mask" id="drawer-mask" hidden></div>
+    <aside class="drawer" id="drawer" hidden aria-label="项目详情">
+        <div class="drawer-head">
+            <span class="text-sm font-semibold text-white">项目详情</span>
+            <button class="icon-btn" id="drawer-close" type="button" aria-label="关闭">✕</button>
+        </div>
+        <div class="drawer-body" id="drawer-body"></div>
+    </aside>
+
+    <!-- 轻提示容器 -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script type="module" src="/assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+
+# 数据 & 日志（挂载卷）
+data/
+logs/
+*.db
+*.db-wal
+*.db-shm
+
+# 环境变量
+.env
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 测试产物 & 截图
+.playwright-cli/
+*.png
+*.pdf
+
+# Git
+.git/
+.gitignore
+
+# 文档源文件不需要打进镜像
+PRD.md

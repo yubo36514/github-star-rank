@@ -1,0 +1,23 @@
+/**
+ * 前端全局配置。
+ * 前后端分离：页面通过 RESTful 接口获取数据；默认与页面同源，
+ * 若需要把前端部署到别的域名，可在 index.html 中设置 window.__API_BASE__。
+ */
+
+/** 接口基址，例如 "http://localhost:8000"，同源部署时为空字符串 */
+export const API_BASE = (window.__API_BASE__ || '').replace(/\/+$/, '');
+
+/** 接口前缀 */
+export const API_PREFIX = '/api/v1';
+
+/** localStorage 中保存客户端标识的 key（用于收藏隔离，无需登录） */
+export const CLIENT_ID_KEY = 'gh_rank_client_id';
+
+/** localStorage 中保存 Admin Token 的 key（手动刷新数据时使用） */
+export const ADMIN_TOKEN_KEY = 'gh_rank_admin_token';
+
+/** localStorage 中保存筛选偏好的 key */
+export const FILTER_STORE_KEY = 'gh_rank_filters';
+
+/** 接口超时时间（毫秒） */
+export const REQUEST_TIMEOUT = 20000;
